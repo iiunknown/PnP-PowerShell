@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Management.Automation;
+using System.Linq;
 using Microsoft.Online.SharePoint.TenantAdministration;
-using Microsoft.PowerShell.Commands;
-using Microsoft.SharePoint.Client;
-using OfficeDevPnP.PowerShell.Commands.Enums;
-using Resources = OfficeDevPnP.PowerShell.Commands.Properties.Resources;
+using SharePointPnP.PowerShell.Commands.Enums;
+using Resources = SharePointPnP.PowerShell.Commands.Properties.Resources;
 
-namespace OfficeDevPnP.PowerShell.Commands.Base
+namespace SharePointPnP.PowerShell.Commands.Base
 {
-    public class SPOAdminCmdlet : SPOCmdlet
+    public abstract class SPOAdminCmdlet : SPOCmdlet
     {
         private Tenant _tenant;
+        private Uri _baseUri;
+
         public Tenant Tenant
         {
             get
@@ -23,6 +23,8 @@ namespace OfficeDevPnP.PowerShell.Commands.Base
                 return _tenant;
             }
         }
+
+        public Uri BaseUri => _baseUri;
 
         protected override void BeginProcessing()
         {
@@ -39,15 +41,44 @@ namespace OfficeDevPnP.PowerShell.Commands.Base
 
             SPOnlineConnection.CurrentConnection.CacheContext();
 
-            Uri uri = new Uri(this.ClientContext.Url);
-            var urlParts = uri.Authority.Split(new[] { '.' });
-            if (!urlParts[0].EndsWith("-admin") && SPOnlineConnection.CurrentConnection.ConnectionType == ConnectionType.O365)
+            if (SPOnlineConnection.CurrentConnection.TenantAdminUrl != null && SPOnlineConnection.CurrentConnection.ConnectionType == ConnectionType.O365)
             {
-                var adminUrl = string.Format("https://{0}-admin.{1}.{2}", urlParts[0], urlParts[1], urlParts[2]);
-
-                SPOnlineConnection.CurrentConnection.Context = SPOnlineConnection.CurrentConnection.CloneContext(adminUrl);
+                var uri = new Uri(SPOnlineConnection.CurrentConnection.Url);
+                var uriParts = uri.Host.Split('.');
+                if (uriParts[0].ToLower().EndsWith("-admin"))
+                {
+                    _baseUri =
+                        new Uri(
+                            $"{uri.Scheme}://{uriParts[0].ToLower().Replace("-admin", "")}.{string.Join(".", uriParts.Skip(1))}{(!uri.IsDefaultPort ? ":" + uri.Port : "")}");
+                }
+                else
+                {
+                    _baseUri = new Uri($"{uri.Scheme}://{uri.Authority}");
+                }
+                SPOnlineConnection.CurrentConnection.CloneContext(SPOnlineConnection.CurrentConnection.TenantAdminUrl);
             }
-            
+            else
+            {
+                Uri uri = new Uri(ClientContext.Url);
+                var uriParts = uri.Host.Split('.');
+                if (!uriParts[0].EndsWith("-admin") &&
+                    SPOnlineConnection.CurrentConnection.ConnectionType == ConnectionType.O365)
+                {
+                    _baseUri = new Uri($"{uri.Scheme}://{uri.Authority}");
+
+                    var adminUrl = $"https://{uriParts[0]}-admin.{string.Join(".", uriParts.Skip(1))}";
+
+                    SPOnlineConnection.CurrentConnection.Context =
+                        SPOnlineConnection.CurrentConnection.CloneContext(adminUrl);
+                }
+                else if(SPOnlineConnection.CurrentConnection.ConnectionType == ConnectionType.TenantAdmin)
+                {
+                    _baseUri =
+                       new Uri(
+                           $"{uri.Scheme}://{uriParts[0].ToLower().Replace("-admin", "")}.{string.Join(".", uriParts.Skip(1))}{(!uri.IsDefaultPort ? ":" + uri.Port : "")}");
+
+                }
+            }
         }
 
         protected override void EndProcessing()
