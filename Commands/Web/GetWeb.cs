@@ -1,25 +1,28 @@
 ﻿using Microsoft.SharePoint.Client;
-using OfficeDevPnP.PowerShell.Commands.Base.PipeBinds;
+using SharePointPnP.PowerShell.Commands.Base.PipeBinds;
 using System;
 using System.Management.Automation;
-using OfficeDevPnP.PowerShell.CmdletHelpAttributes;
+using SharePointPnP.PowerShell.CmdletHelpAttributes;
+using SharePointPnP.PowerShell.Commands.Extensions;
 
-namespace OfficeDevPnP.PowerShell.Commands
+namespace SharePointPnP.PowerShell.Commands
 {
-    [Cmdlet(VerbsCommon.Get, "SPOWeb")]
+    [Cmdlet(VerbsCommon.Get, "PnPWeb")]
+    [CmdletAlias("Get-SPOWeb")]
     [CmdletHelp("Returns the current web object",
-        Category = CmdletHelpCategory.Webs)]
+        Category = CmdletHelpCategory.Webs,
+        OutputType = typeof(Web),
+        OutputTypeLink = "https://msdn.microsoft.com/en-us/library/microsoft.sharepoint.client.web.aspx")]
     public class GetWeb : SPOCmdlet
     {
-        [Parameter(Mandatory = false, ValueFromPipeline = true, Position=0)]
+        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 0)]
         public WebPipeBind Identity;
 
         protected override void ExecuteCmdlet()
         {
             if (Identity == null)
             {
-                ClientContext.Load(ClientContext.Web, w => w.Id, w => w.Url, w => w.Title);
-                ClientContext.ExecuteQueryRetry();
+                ClientContext.Web.EnsureProperties(w => w.Id, w => w.Url, w => w.Title, w => w.ServerRelativeUrl);
                 WriteObject(ClientContext.Web);
             }
             else

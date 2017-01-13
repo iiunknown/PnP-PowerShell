@@ -1,21 +1,30 @@
 ﻿using System.Linq;
 using System.Management.Automation;
 using Microsoft.SharePoint.Client;
-using OfficeDevPnP.PowerShell.CmdletHelpAttributes;
-using OfficeDevPnP.PowerShell.Commands.Base.PipeBinds;
-using OfficeDevPnP.PowerShell.Commands.Enums;
+using SharePointPnP.PowerShell.CmdletHelpAttributes;
+using SharePointPnP.PowerShell.Commands.Base.PipeBinds;
+using SharePointPnP.PowerShell.Commands.Enums;
 
-namespace OfficeDevPnP.PowerShell.Commands.Principals
+namespace SharePointPnP.PowerShell.Commands.Principals
 {
-    [Cmdlet("Set", "SPOGroup")]
+    [Cmdlet("Set", "PnPGroup")]
+    [CmdletAlias("Set-SPOGroup")]
     [CmdletHelp("Updates a group",
         Category = CmdletHelpCategory.Principals)]
+    [CmdletExample(
+        Code = @"PS:> Set-PnPGroup -Identity 'My Site Members' -SetAssociatedGroup Members",
+        Remarks = "Sets the SharePoint group with the name 'My Site Members' as the associated members group",
+        SortOrder = 1)]
+    [CmdletExample(
+        Code = @"PS:> Set-PnPGroup -Identity 'My Site Members' -Owner 'site owners'",
+        Remarks = "Sets the SharePoint group with the name 'site owners' as the owner of the SharePoint group with the name 'My Site Members'",
+        SortOrder = 2)]
     public class SetGroup : SPOWebCmdlet
     {
-        [Parameter(Mandatory = true)]
+        [Parameter(Mandatory = true, HelpMessage = "A group object, an ID or a name of a group")]
         public GroupPipeBind Identity = new GroupPipeBind();
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "One of the associated group types (Visitors, Members, Owners")]
         public AssociatedGroupType SetAssociatedGroup = AssociatedGroupType.None;
 
         [Parameter(Mandatory = false, HelpMessage = "Name of the permission set to add to this SharePoint group")]
@@ -24,28 +33,28 @@ namespace OfficeDevPnP.PowerShell.Commands.Principals
         [Parameter(Mandatory = false, HelpMessage = "Name of the permission set to remove from this SharePoint group")]
         public string RemoveRole = string.Empty;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "The title for the group")]
         public string Title = string.Empty;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "The owner for the group, which can be a user or another group")]
         public string Owner;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "The description for the group")]
         public string Description;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "A switch parameter that specifies whether to allow users to request membership in the group and to allow users to request to leave the group")]
         public bool AllowRequestToJoinLeave;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "A switch parameter that specifies whether users are automatically added or removed when they make a request")]
         public bool AutoAcceptRequestToJoinLeave;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "A switch parameter that specifies whether group members can modify membership in the group")]
         public bool AllowMembersEditMembership;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "A switch parameter that specifies whether only group members are allowed to view the list of members in the group")]
         public bool OnlyAllowMembersViewMembership;
 
-        [Parameter(Mandatory = false)]
+        [Parameter(Mandatory = false, HelpMessage = "The e-mail address to which membership requests are sent")]
         public string RequestToJoinEmail;
 
         protected override void ExecuteCmdlet()
@@ -117,23 +126,23 @@ namespace OfficeDevPnP.PowerShell.Commands.Principals
                 group.Description = Description;
                 dirty = true;
             }
-            if (AllowRequestToJoinLeave != group.AllowRequestToJoinLeave)
+            if (MyInvocation.BoundParameters.ContainsKey("AllowRequestToJoinLeave") && AllowRequestToJoinLeave != group.AllowRequestToJoinLeave)
             {
                 group.AllowRequestToJoinLeave = AllowRequestToJoinLeave;
                 dirty = true;
             } 
 
-            if (AutoAcceptRequestToJoinLeave != group.AutoAcceptRequestToJoinLeave)
+            if (MyInvocation.BoundParameters.ContainsKey("AutoAcceptRequestToJoinLeave") && AutoAcceptRequestToJoinLeave != group.AutoAcceptRequestToJoinLeave)
             {
                 group.AutoAcceptRequestToJoinLeave = AutoAcceptRequestToJoinLeave;
                 dirty = true;
             }
-            if (AllowMembersEditMembership != group.AllowMembersEditMembership)
+            if (MyInvocation.BoundParameters.ContainsKey("AllowMembersEditMembership") && AllowMembersEditMembership != group.AllowMembersEditMembership)
             {
                 group.AllowMembersEditMembership = AllowMembersEditMembership;
                 dirty = true;
             }
-            if (OnlyAllowMembersViewMembership != group.OnlyAllowMembersViewMembership)
+            if (MyInvocation.BoundParameters.ContainsKey("OnlyAllowMembersViewMembership") && OnlyAllowMembersViewMembership != group.OnlyAllowMembersViewMembership)
             {
                 group.OnlyAllowMembersViewMembership = OnlyAllowMembersViewMembership;
                 dirty = true;
